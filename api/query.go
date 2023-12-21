@@ -29,6 +29,9 @@ func Query(input Input) (res *http.Response, err error) {
 	if apiKey == "" {
 		apiKey = viper.GetString("apiKey")
 	}
+	// fmt.Println("Jeff")
+	// fmt.Println(string(jsonValue))
+
 	req, err := http.NewRequest("POST", apiUrl+"?api_key="+apiKey, bytes.NewBuffer(jsonValue))
 	if err != nil {
 		return

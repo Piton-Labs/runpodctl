@@ -24,8 +24,8 @@ func init() {
 	trainCmd.AddCommand(train.RunConfigCmd)
 }
 
-func GetPodEnv() {
-	trainCmd.PersistentFlags().VisitAll(func(flag *pflag.Flag) {
+func PrintPodEnv() {
+	trainCmd.Flags().VisitAll(func(flag *pflag.Flag) {
 		fmt.Printf("Name: %s, Value: %s\n", flag.Name, flag.Value)
 	})
 }

@@ -10,12 +10,14 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var IncludeUnavailable bool
+var IncludeUnavailableGPU bool
 var AvailableStatus bool
 var AllFields bool
 var TrainOnly bool
 var ImageFilter string
 var GpuFilter string
+var GetAll bool
+var StatusFilter string
 
 var GetPodCmd = &cobra.Command{
 	Use:   "pod",
@@ -30,7 +32,7 @@ var GetPodCmd = &cobra.Command{
 		var f = &api.PodFilter{
 			Image:          ImageFilter,
 			GpuType:        GpuFilter,
-			UnavailableGpu: IncludeUnavailable,
+			UnavailableGpu: IncludeUnavailableGPU,
 		}
 
 		if f.HasFilter() {
@@ -62,13 +64,14 @@ var GetPodCmd = &cobra.Command{
 					fmt.Sprintf("%d", p.ContainerDiskInGb),
 					fmt.Sprintf("%d", p.VolumeInGb),
 					fmt.Sprintf("%.3f", p.CostPerHr),
+					fmt.Sprintf("%s", p.Env),
 				)
 			}
 			data[i] = row
 		}
 		header := []string{"ID", "Name", "GPU", "Image Name", "Status"}
 		if AllFields {
-			header = append(header, "Pod Type", "vCPU", "Mem", "Container Disk", "Volume Disk", "$/hr")
+			header = append(header, "Pod Type", "vCPU", "Mem", "Container Disk", "Volume Disk", "$/hr", "ENV")
 		}
 
 		tb := tablewriter.NewWriter(os.Stdout)
@@ -80,7 +83,8 @@ var GetPodCmd = &cobra.Command{
 }
 
 func init() {
-	GetPodCmd.Flags().BoolVarP(&IncludeUnavailable, "includeUnavailable", "u", false, "include unavailable gpus")
+	GetPodCmd.Flags().BoolVar(&GetAll, "getAll", false, "ignore filters completely")
+	GetPodCmd.Flags().BoolVarP(&IncludeUnavailableGPU, "includeUnavailable", "u", false, "include unavailable gpus")
 	GetPodCmd.Flags().BoolVarP(&AllFields, "allfields", "a", false, "include all fields in output")
 	GetPodCmd.Flags().BoolVarP(&TrainOnly, "train", "t", false, "include only images with train in their name")
 	GetPodCmd.Flags().StringVarP(&ImageFilter, "image", "i", "", "filter out images that don't match the value")
