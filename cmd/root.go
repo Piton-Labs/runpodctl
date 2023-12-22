@@ -40,6 +40,7 @@ func init() {
 	RootCmd.AddCommand(startCmd)
 	RootCmd.AddCommand(stopCmd)
 	RootCmd.AddCommand(trainCmd)
+	RootCmd.AddCommand(getCredsCmd)
 	RootCmd.AddCommand(versionCmd)
 
 	RootCmd.AddCommand(croc.ReceiveCmd)

@@ -10,6 +10,7 @@ import (
 
 var CreatePod bool
 var AllPods bool
+var ForceCreate bool
 var inputFilename string
 var outputFilename string
 
@@ -39,7 +40,7 @@ var RunConfigCmd = &cobra.Command{
 		If a template id is specified it will create a new pod if an existing pod is not found
 	`,
 	Run: func(cmd *cobra.Command, args []string) {
-		var configEnv []api.PodEnv
+		var configEnv []*api.PodEnv
 		var err error
 		if len(inputFilename) > 0 {
 			configEnv, err = api.ReadConfigFile(inputFilename)
@@ -64,12 +65,12 @@ var RunConfigCmd = &cobra.Command{
 			fmt.Println(err)
 		}
 
-		if len(pods) > 0 {
-			launchExistingPod(pods[0], &configEnv)
-		} else if CreatePod {
-			createPod(&configEnv)
+		if !ForceCreate && len(pods) > 0 {
+			launchExistingPod(pods[0], configEnv)
+		} else if ForceCreate || CreatePod {
+			createPod(configEnv)
 		} else {
-			fmt.Println("No existing pods that matched requirements and -c was not specified to create a pod.")
+			fmt.Println("No existing pods that matched requirements and -c or --forceCreate were not specified to create a pod.")
 		}
 
 	},
@@ -78,67 +79,76 @@ var RunConfigCmd = &cobra.Command{
 func init() {
 	RunConfigCmd.Flags().StringVar(&inputFilename, "filename", "", "The name of the file to read from")
 	RunConfigCmd.Flags().StringVar(&outputFilename, "output", ".env", "The name of the file to read from")
-	RunConfigCmd.Flags().BoolVarP(&CreatePod, "create", "c", false, "Creates a new pod if required")
+	RunConfigCmd.Flags().BoolVarP(&CreatePod, "create", "c", false, "Creates a new pod if one of the existing pods won't work")
 	RunConfigCmd.Flags().BoolVarP(&AllPods, "all", "a", false, "Does not restrict to images with train")
+	RunConfigCmd.Flags().BoolVar(&ForceCreate, "forceCreate", false, "Forces Creation of a new pod")
 
 	AddTrainFlags(RunConfigCmd)
 	AddPodFlags(RunConfigCmd)
 }
 
-func createPod(configEnv *[]api.PodEnv) {
+func createPod(configEnv []*api.PodEnv) {
 	fmt.Println("Create and run new pod")
-	// input := &api.CreatePodInput{
-	// 	ContainerDiskInGb: containerDiskInGb,
-	// 	DeployCost:        deployCost,
-	// 	DockerArgs:        dockerArgs,
-	// 	GpuCount:          gpuCount,
-	// 	GpuTypeId:         gpuTypeId,
-	// 	ImageName:         imageName,
-	// 	MinMemoryInGb:     minMemoryInGb,
-	// 	MinVcpuCount:      minVcpuCount,
-	// 	Name:              name,
-	// 	TemplateId:        templateId,
-	// 	VolumeInGb:        volumeInGb,
-	// 	VolumeMountPath:   volumeMountPath,
-	// }
-	// if len(ports) > 0 {
-	// 	input.Ports = strings.Join(ports, ",")
-	// }
-	// input.Env = make([]*api.PodEnv, len(env))
+	input := &api.CreatePodInput{
+		ContainerDiskInGb: containerDiskInGb,
+		DeployCost:        deployCost,
+		DockerArgs:        dockerArgs,
+		GpuCount:          gpuCount,
+		GpuTypeId:         gpuTypeId,
+		ImageName:         imageName,
+		MinMemoryInGb:     minMemoryInGb,
+		MinVcpuCount:      minVcpuCount,
+		Name:              name,
+		TemplateId:        templateId,
+		VolumeInGb:        volumeInGb,
+		VolumeMountPath:   volumeMountPath,
+	}
+	if len(ports) > 0 {
+		input.Ports = strings.Join(ports, ",")
+	}
+	input.Env = configEnv
 
-	// for i, v := range env {
-	// 	e := strings.Split(v, "=")
-	// 	if len(e) != 2 {
-	// 		cobra.CheckErr(fmt.Errorf("wrong env value: %s", e))
-	// 	}
-	// 	input.Env[i] = &api.PodEnv{Key: e[0], Value: e[1]}
-	// }
+	input.CloudType = "SECURE"
 
-	// input.CloudType = "SECURE"
+	if len(outputFilename) > 0 {
+		api.WritePodInput(outputFilename, input)
+	}
 
-	// if len(outputFilename) > 0 {
-	// 	api.WritePodInput(outputFilename, input)
-	// }
+	missingEnv := input.CheckEnv()
+	if len(missingEnv) > 0 {
+		fmt.Printf("ERROR: The following environment variables must be loaded from a config or set with a flag:\n %s\n", strings.Join(missingEnv, "\n "))
+		return
+	}
 
-	// pod, err := api.CreatePod(input)
-	// cobra.CheckErr(err)
+	isImageAllowed := len(input.ImageName) > 0 && len(input.GpuTypeId) > 0
+	isTemplateAllowed := len(input.TemplateId) > 0
+	if !isImageAllowed && !isTemplateAllowed {
+		fmt.Print("To create a pod an image or templateId must be provided, if an image is specified you must also set the GpuTypeId\n\n")
+		return
+	}
 
-	// if pod["desiredStatus"] == "RUNNING" {
-	// 	fmt.Printf(`pod "%s" created for $%.3f / hr`, pod["id"], pod["costPerHr"])
-	// 	fmt.Println()
-	// } else {
-	// 	cobra.CheckErr(fmt.Errorf(`pod "%s" start failed; status is %s`, args[0], pod["desiredStatus"]))
-	// }
+	fmt.Printf("isImageAllowed %t isTemplateAllowed %t %s", isImageAllowed, isTemplateAllowed, input.TemplateId)
+
+	PrintPodInputEnv(input)
+
+	pod, err := api.CreatePod(input)
+	cobra.CheckErr(err)
+
+	if pod["desiredStatus"] == "RUNNING" {
+		fmt.Printf(`pod "%s" created for $%.3f / hr`, pod["id"], pod["costPerHr"])
+		fmt.Println()
+	} else {
+		cobra.CheckErr(fmt.Errorf(`pod "%s" start failed; status is %s`, pod["id"], pod["desiredStatus"]))
+	}
 }
 
-func launchExistingPod(pod *api.Pod, configEnv *[]api.PodEnv) {
+func launchExistingPod(pod *api.Pod, configEnv []*api.PodEnv) {
 	fmt.Println("Launch existing pod")
 	// Map the existing environment variables
 	newEnv := map[string]string{}
 	for _, item := range pod.Env {
 		parts := strings.Split(item, "=")
 		if len(parts) == 2 {
-			fmt.Printf("%s: %s\n", parts[0], parts[1])
 			newEnv[parts[0]] = parts[1]
 		} else {
 			fmt.Println("Invalid env variable " + item)
@@ -146,7 +156,7 @@ func launchExistingPod(pod *api.Pod, configEnv *[]api.PodEnv) {
 	}
 
 	// Overwrite or add any new variables
-	for _, item := range *configEnv {
+	for _, item := range configEnv {
 		newEnv[item.Key] = item.Value
 	}
 
@@ -157,12 +167,38 @@ func launchExistingPod(pod *api.Pod, configEnv *[]api.PodEnv) {
 	}
 	pod.Env = strEnv
 
-	api.ModifyPod(pod)
+	// missingEnv := pod.CheckEnv()
+	// if len(missingEnv) > 0 {
+	// 	fmt.Printf("ERROR: The following environment variables must be loaded from a config or set with a flag:\n %s\n", strings.Join(missingEnv, "\n "))
+	// 	fmt.Print(pod.Env)
+	// 	return
+	// }
+
+	err := api.ModifyPod(pod)
+	if err != nil {
+		fmt.Println("Error creating pod")
+		fmt.Println(err)
+		return
+	}
+
+	fmt.Printf("Pod %s updated successfully. Starting it now\n", pod.Id)
+
+	api.StartOnDemandPod(pod.Id)
+
+	PrintPodEnv(pod)
+
 }
 
 func PrintPodEnv(pod *api.Pod) {
 	fmt.Printf("%s\n- GPU: %s\n- Image: %s\n- GpuCount: %d\n- Env\n", pod.Name, pod.Machine.GpuDisplayName, pod.ImageName, pod.GpuCount)
 	for _, val := range pod.Env {
 		fmt.Printf("  - %s", val)
+	}
+}
+
+func PrintPodInputEnv(pod *api.CreatePodInput) {
+	fmt.Printf("%s\n- GPU: %s\n- Image: %s\n- GpuCount: %d\n- Env\n", pod.Name, pod.GpuTypeId, pod.ImageName, pod.GpuCount)
+	for _, val := range pod.Env {
+		fmt.Printf("  - %s=%s\n", val.Key, val.Value)
 	}
 }
