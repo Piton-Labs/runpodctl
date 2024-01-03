@@ -44,7 +44,7 @@ var GetPodCmd = &cobra.Command{
 				fmt.Printf("- GpuType:       %s\n", f.GpuType)
 			}
 			if f.IsAvailableGpuFilter() {
-				fmt.Println("- Available GPU: true")
+				fmt.Println("- Available GPU Only: true")
 			}
 
 			fmt.Println("")
@@ -54,7 +54,7 @@ var GetPodCmd = &cobra.Command{
 		cobra.CheckErr(err)
 		data := make([][]string, len(pods))
 		for i, p := range pods {
-			row := []string{p.Id, p.Name, fmt.Sprintf("%d %s", p.GpuCount, p.Machine.GpuDisplayName), p.ImageName, p.DesiredStatus}
+			row := []string{p.Id, p.Name, fmt.Sprintf("%d/%d %s", p.Machine.GpuAvailable, p.GpuCount, p.Machine.GpuDisplayName), p.ImageName, p.DesiredStatus}
 			if AllFields {
 				row = append(
 					row,
@@ -69,7 +69,7 @@ var GetPodCmd = &cobra.Command{
 			}
 			data[i] = row
 		}
-		header := []string{"ID", "Name", "GPU", "Image Name", "Status"}
+		header := []string{"ID", "Name", "Avail/Required GPU", "Image Name", "Status"}
 		if AllFields {
 			header = append(header, "Pod Type", "vCPU", "Mem", "Container Disk", "Volume Disk", "$/hr", "ENV")
 		}

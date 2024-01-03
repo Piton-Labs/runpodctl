@@ -147,7 +147,7 @@ func (f PodFilter) isGpuMatch(p *Pod) bool {
 }
 
 func (f PodFilter) isAvailableMatch(p *Pod) bool {
-	return f.UnavailableGpu || p.GpuCount > 0
+	return f.UnavailableGpu || p.Machine.GpuAvailable > 0
 }
 
 func (f PodFilter) isAvailableStatus(p *Pod) bool {

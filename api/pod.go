@@ -41,6 +41,7 @@ type Pod struct {
 }
 type Machine struct {
 	GpuDisplayName string
+	GpuAvailable   int
 }
 
 func GetPods() (pods []*Pod, err error) {
@@ -71,6 +72,7 @@ func GetPods() (pods []*Pod, err error) {
 				volumeMountPath
 				machine {
 				  gpuDisplayName
+				  gpuAvailable
 				}
 			  }
 			}

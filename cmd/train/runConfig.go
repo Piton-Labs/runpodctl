@@ -148,10 +148,10 @@ func launchExistingPod(pod *api.Pod, configEnv []*api.PodEnv) {
 	newEnv := map[string]string{}
 	for _, item := range pod.Env {
 		parts := strings.Split(item, "=")
-		if len(parts) == 2 {
-			newEnv[parts[0]] = parts[1]
+		if len(parts) > 1 {
+			newEnv[parts[0]] = strings.Join(parts[1:], "=")
 		} else {
-			fmt.Println("Invalid env variable " + item)
+			fmt.Printf("Invalid env variable %s len %d\n", item, len(parts))
 		}
 	}
 
@@ -183,9 +183,14 @@ func launchExistingPod(pod *api.Pod, configEnv []*api.PodEnv) {
 
 	fmt.Printf("Pod %s updated successfully. Starting it now\n", pod.Id)
 
-	api.StartOnDemandPod(pod.Id)
+	restartPod, err := api.StartOnDemandPod(pod.Id)
+
+	if err != nil {
+
+	}
 
 	PrintPodEnv(pod)
+	fmt.Println(restartPod)
 
 }
 
