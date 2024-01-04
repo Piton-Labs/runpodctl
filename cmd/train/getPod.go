@@ -35,20 +35,7 @@ var GetPodCmd = &cobra.Command{
 			UnavailableGpu: IncludeUnavailableGPU,
 		}
 
-		if f.HasFilter() {
-			fmt.Println("\nFilters:")
-			if f.IsFilterImage() {
-				fmt.Printf("- Image:         %s\n", f.Image)
-			}
-			if f.IsGpuFilter() {
-				fmt.Printf("- GpuType:       %s\n", f.GpuType)
-			}
-			if f.IsAvailableGpuFilter() {
-				fmt.Println("- Available GPU Only: true")
-			}
-
-			fmt.Println("")
-		}
+		f.Print()
 
 		pods, err := api.GetFilteredPods(f)
 		cobra.CheckErr(err)
@@ -83,11 +70,5 @@ var GetPodCmd = &cobra.Command{
 }
 
 func init() {
-	GetPodCmd.Flags().BoolVar(&GetAll, "getAll", false, "ignore filters completely")
-	GetPodCmd.Flags().BoolVarP(&IncludeUnavailableGPU, "includeUnavailable", "u", false, "include unavailable gpus")
-	GetPodCmd.Flags().BoolVarP(&AllFields, "allfields", "a", false, "include all fields in output")
-	GetPodCmd.Flags().BoolVarP(&TrainOnly, "train", "t", false, "include only images with train in their name")
-	GetPodCmd.Flags().StringVarP(&ImageFilter, "image", "i", "", "filter out images that don't match the value")
-	GetPodCmd.Flags().StringVarP(&GpuFilter, "gpu", "g", "", "filter out gpus that don't match the value")
-	GetPodCmd.Flags().BoolVarP(&AvailableStatus, "available", "e", true, "Only include exited pods")
+	AddSearchFlags(GetPodCmd)
 }

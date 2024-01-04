@@ -17,7 +17,7 @@ var ConfigCmd = &cobra.Command{
 	Long:  "Create a training config and save it locally",
 	Run: func(cmd *cobra.Command, args []string) {
 		var env []api.PodEnv
-		cmd.Parent().Flags().VisitAll(func(flag *pflag.Flag) {
+		cmd.Flags().VisitAll(func(flag *pflag.Flag) {
 			env = append(env, api.TrainEnvFormat(flag.Name, flag.Value))
 		})
 
@@ -27,4 +27,5 @@ var ConfigCmd = &cobra.Command{
 
 func init() {
 	ConfigCmd.Flags().StringVar(&filename, "filename", ".env", "The name of the file to save to")
+	AddTrainFlags(ConfigCmd)
 }

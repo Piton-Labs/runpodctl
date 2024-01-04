@@ -133,8 +133,7 @@ func GetFilteredPods(f *PodFilter) (pods []*Pod, err error) {
 
 	allPodCount := len(pods)
 	filteredPodCount := allPodCount - len(filteredPods)
-	fmt.Printf("There are %d pods, %d are filtered out\n", allPodCount, filteredPodCount)
-	f.Print()
+	fmt.Printf("\nThere are %d pods, %d are filtered out\n", allPodCount, filteredPodCount)
 	return filteredPods, nil
 }
 
@@ -155,7 +154,19 @@ func (f PodFilter) isAvailableStatus(p *Pod) bool {
 }
 
 func (f PodFilter) Print() {
-	fmt.Printf("Image: %s\nGpu: %s\nUnavailable: %t\n", f.Image, f.GpuType, f.UnavailableGpu)
+	fmt.Println("\nFilters:")
+	if !f.HasFilter() {
+		fmt.Println("- None")
+	}
+	if f.IsFilterImage() {
+		fmt.Printf("- Image:         %s\n", f.Image)
+	}
+	if f.IsGpuFilter() {
+		fmt.Printf("- GpuType:       %s\n", f.GpuType)
+	}
+	if f.IsAvailableGpuFilter() {
+		fmt.Println("- Available GPU Only: true")
+	}
 }
 
 func TrainEnvFormat(varName string, val pflag.Value) PodEnv {
@@ -364,6 +375,7 @@ var REQUIRED_ENV = []string{
 	"TRAINING_LORA_NAME",
 	"AWS_ACCESS_KEY_ID",
 	"AWS_SECRET_ACCESS_KEY",
+	"AWS_DEFAULT_REGION",
 }
 
 func (p *Pod) CheckEnv() []string {

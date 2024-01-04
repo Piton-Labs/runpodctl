@@ -50,6 +50,15 @@ func AddPodFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVar(&templateId, "templateId", "", "templateId to use with the pod")
 	cmd.Flags().IntVar(&volumeInGb, "volumeSize", 1, "persistent volume disk size in GB")
 	cmd.Flags().StringVar(&volumeMountPath, "volumePath", "/runpod", "container volume path")
+	cmd.MarkFlagRequired("imageName") //nolint
+}
 
-	// cmd.MarkFlagRequired("imageName") //nolint
+func AddSearchFlags(cmd *cobra.Command) {
+	cmd.Flags().BoolVar(&GetAll, "getAll", false, "ignore filters completely")
+	cmd.Flags().BoolVarP(&IncludeUnavailableGPU, "includeUnavailable", "u", false, "include unavailable gpus")
+	cmd.Flags().BoolVarP(&AllFields, "allfields", "a", false, "include all fields in output")
+	cmd.Flags().BoolVarP(&TrainOnly, "train", "t", false, "include only images with train in their name")
+	cmd.Flags().StringVarP(&ImageFilter, "image", "i", "", "filter out images that don't match the value")
+	cmd.Flags().StringVarP(&GpuFilter, "gpu", "g", "", "filter out gpus that don't match the value")
+	cmd.Flags().BoolVarP(&AvailableStatus, "available", "e", true, "Only include exited pods")
 }

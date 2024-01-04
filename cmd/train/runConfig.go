@@ -11,7 +11,7 @@ import (
 var CreatePod bool
 var AllPods bool
 var ForceCreate bool
-var inputFilename string
+var configFilename string
 var outputFilename string
 
 var communityCloud bool
@@ -42,22 +42,34 @@ var RunConfigCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		var configEnv []*api.PodEnv
 		var err error
-		if len(inputFilename) > 0 {
-			configEnv, err = api.ReadConfigFile(inputFilename)
+		if len(configFilename) > 0 {
+			configEnv, err = api.ReadConfigFile(configFilename)
 			if err != nil {
 				fmt.Print(err)
 				return
 			}
 		}
 
-		imageFilter := "train"
-		if AllPods {
-			imageFilter = ""
+		ImageFilter := "train"
+		var f = &api.PodFilter{
+			Image:          ImageFilter,
+			GpuType:        GpuFilter,
+			UnavailableGpu: IncludeUnavailableGPU,
 		}
 
-		var f = &api.PodFilter{
-			Image:          imageFilter,
-			UnavailableGpu: false,
+		if f.HasFilter() {
+			fmt.Println("\nFilters:")
+			if f.IsFilterImage() {
+				fmt.Printf("- Image:         %s\n", f.Image)
+			}
+			if f.IsGpuFilter() {
+				fmt.Printf("- GpuType:       %s\n", f.GpuType)
+			}
+			if f.IsAvailableGpuFilter() {
+				fmt.Println("- Available GPU Only: true")
+			}
+
+			fmt.Println("")
 		}
 
 		pods, err := api.GetFilteredPods(f)
@@ -77,13 +89,12 @@ var RunConfigCmd = &cobra.Command{
 }
 
 func init() {
-	RunConfigCmd.Flags().StringVar(&inputFilename, "filename", "", "The name of the file to read from")
-	RunConfigCmd.Flags().StringVar(&outputFilename, "output", ".env", "The name of the file to read from")
+	RunConfigCmd.Flags().StringVar(&configFilename, "config", "", "The name of the file to read environment variables from")
+	RunConfigCmd.Flags().StringVar(&outputFilename, "output", ".env", "The name of a file to write the input to create a pod to")
 	RunConfigCmd.Flags().BoolVarP(&CreatePod, "create", "c", false, "Creates a new pod if one of the existing pods won't work")
-	RunConfigCmd.Flags().BoolVarP(&AllPods, "all", "a", false, "Does not restrict to images with train")
 	RunConfigCmd.Flags().BoolVar(&ForceCreate, "forceCreate", false, "Forces Creation of a new pod")
 
-	AddTrainFlags(RunConfigCmd)
+	AddSearchFlags(RunConfigCmd)
 	AddPodFlags(RunConfigCmd)
 }
 

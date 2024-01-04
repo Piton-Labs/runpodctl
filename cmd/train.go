@@ -17,8 +17,6 @@ var trainCmd = &cobra.Command{
 }
 
 func init() {
-	train.AddTrainFlags(trainCmd)
-
 	trainCmd.AddCommand(train.ConfigCmd)
 	trainCmd.AddCommand(train.GetPodCmd)
 	trainCmd.AddCommand(train.RunConfigCmd)
