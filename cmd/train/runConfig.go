@@ -50,7 +50,9 @@ var RunConfigCmd = &cobra.Command{
 			}
 		}
 
-		ImageFilter := "train"
+		if len(ImageFilter) == 0 {
+			ImageFilter = "train"
+		}
 		var f = &api.PodFilter{
 			Image:          ImageFilter,
 			GpuType:        GpuFilter,
@@ -90,7 +92,7 @@ var RunConfigCmd = &cobra.Command{
 
 func init() {
 	RunConfigCmd.Flags().StringVar(&configFilename, "config", "", "The name of the file to read environment variables from")
-	RunConfigCmd.Flags().StringVar(&outputFilename, "output", ".env", "The name of a file to write the input to create a pod to")
+	RunConfigCmd.Flags().StringVar(&outputFilename, "output", "", "The name of a file to write the input to create a pod to")
 	RunConfigCmd.Flags().BoolVarP(&CreatePod, "create", "c", false, "Creates a new pod if one of the existing pods won't work")
 	RunConfigCmd.Flags().BoolVar(&ForceCreate, "forceCreate", false, "Forces Creation of a new pod")
 

@@ -50,7 +50,6 @@ func AddPodFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVar(&templateId, "templateId", "", "templateId to use with the pod")
 	cmd.Flags().IntVar(&volumeInGb, "volumeSize", 1, "persistent volume disk size in GB")
 	cmd.Flags().StringVar(&volumeMountPath, "volumePath", "/runpod", "container volume path")
-	cmd.MarkFlagRequired("imageName") //nolint
 }
 
 func AddSearchFlags(cmd *cobra.Command) {

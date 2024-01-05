@@ -42,7 +42,7 @@ adding:
 
 You can reuse training pod when there are existing "Exited" pod instances. If you wish to create a pod start by using Runpod's web interface to create the pod and stop it as soon as the container is created. Eventually that will be added to this utility but due to an issue with the Runpod API and specifying docker registry credentials this is not currently possible. You should also create a config file with the environment variables needed to run a training job. See config below.
 
-
+All of the filters available when listing pods are available when running a job.
 
 ```
 ./bin/runpodctl train run --config ~/training_runs/env
